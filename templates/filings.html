@@ -91,6 +91,22 @@
 	  font-size: 14px;
 	}
 
+	.user-info-top {
+	  color: #e5e7eb;
+	  font-size: 13px;
+	}
+
+	.logout-link-top {
+	  color: #d1d5db;
+	  text-decoration: none;
+	  font-weight: 500;
+	}
+
+	.logout-link-top:hover {
+	  color: white;
+	  text-decoration: underline;
+	}
+
 	/* Main Content */
 	.content {
 	  padding: 24px;
@@ -168,10 +184,6 @@
 	cursor: default;
 	}
 
-	td.exported {
-	background: #ecfdf5 !important;
-	}
-
 	/* Multiselect Style */
 	#filters {
 	margin: 0;
@@ -220,14 +232,20 @@
     <span class="current-ticker">{{ ticker }}</span>
   </div>
   
-  <div class="ticker-input-container">
-    <input 
-      type="text" 
-      id="ticker-change" 
-      placeholder="Ticker..." 
-      pattern="[A-Za-z]{1,5}"
-    >
-    <button onclick="changeTicker()">Go</button>
+  <div style="display: flex; align-items: center; gap: 20px;">
+    <div class="ticker-input-container">
+      <input 
+        type="text" 
+        id="ticker-change" 
+        placeholder="Ticker..." 
+		autocomplete="off"
+        pattern="[A-Za-z]{1,5}"
+      >
+      <button onclick="changeTicker()">Go</button>
+    </div>
+    <div class="user-info-top">
+      {{ user_name }} · <a href="/logout" class="logout-link-top">Logout</a>
+    </div>
   </div>
 </div>
 
