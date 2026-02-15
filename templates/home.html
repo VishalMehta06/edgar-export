@@ -52,6 +52,12 @@
       gap: 16px;
     }
 
+	.form-ticker-input {
+		justify-content: center;
+		justify-items: center;
+		text-align: center;
+	}
+
     label {
       font-weight: 500;
       color: #374151;
@@ -159,7 +165,7 @@
     <p class="subtitle">Export company filings to Excel</p>
     
     <form action="/filings/" method="get" onsubmit="return handleSubmit(event)">
-      <div>
+      <div class="form-ticker-input">
         <label for="ticker">Enter Stock Ticker</label>
         <input 
           type="text" 
