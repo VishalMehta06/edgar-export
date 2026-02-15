@@ -4,6 +4,7 @@ from app.Client import Client
 import app.Utils as Utils
 import os
 import tempfile
+import traceback
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
@@ -76,7 +77,8 @@ def filings(ticker):
 			user_name=session.get('user_name')
 		)
 	except Exception as e:
-		return render_template("error.html", ticker=ticker, error=str(e))
+		return render_template("error.html", ticker=ticker, 
+						 	   error=traceback.format_exc())
 
 @app.route("/export", methods=["POST"])
 def export_report():
