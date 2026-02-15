@@ -10,25 +10,30 @@
 
 	body {
 	  margin: 0;
-	  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-	  background: #f8fafc;
+	  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+	  background: #f3f4f6;
 	}
 
 	/* Top Bar */
 	.topbar {
-	  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	  background: #1f2937;
 	  color: white;
 	  padding: 16px 24px;
 	  display: flex;
 	  align-items: center;
 	  justify-content: space-between;
-	  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	  border-bottom: 1px solid #374151;
+	  position: sticky;
+	  top: 0;
+	  z-index: 100;
 	}
 
 	.topbar h1 {
 	  margin: 0;
-	  font-size: 24px;
+	  font-size: 20px;
 	  font-weight: 600;
+	  letter-spacing: -0.3px;
 	}
 
 	.ticker-input-container {
@@ -39,46 +44,51 @@
 
 	.ticker-input-container input {
 	  padding: 8px 12px;
-	  border: 2px solid rgba(255, 255, 255, 0.3);
-	  border-radius: 6px;
-	  background: rgba(255, 255, 255, 0.15);
+	  border: 1px solid #4b5563;
+	  border-radius: 4px;
+	  background: #374151;
 	  color: white;
 	  font-size: 14px;
 	  text-transform: uppercase;
 	  min-width: 120px;
+	  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
 	}
 
 	.ticker-input-container input::placeholder {
-	  color: rgba(255, 255, 255, 0.6);
+	  color: #9ca3af;
 	}
 
 	.ticker-input-container input:focus {
 	  outline: none;
-	  background: rgba(255, 255, 255, 0.25);
-	  border-color: rgba(255, 255, 255, 0.5);
+	  background: #4b5563;
+	  border-color: #6b7280;
 	}
 
 	.ticker-input-container button {
 	  padding: 8px 16px;
-	  background: white;
-	  color: #667eea;
+	  background: #6b7280;
+	  color: white;
 	  border: none;
-	  border-radius: 6px;
-	  font-weight: 600;
+	  border-radius: 4px;
+	  font-weight: 500;
 	  cursor: pointer;
-	  transition: transform 0.2s;
+	  transition: background 0.15s;
+	  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+	  font-size: 14px;
 	}
 
 	.ticker-input-container button:hover {
-	  transform: scale(1.05);
+	  background: #4b5563;
 	}
 
 	.current-ticker {
-	  background: rgba(255, 255, 255, 0.2);
+	  background: #374151;
 	  padding: 6px 12px;
-	  border-radius: 6px;
+	  border-radius: 4px;
 	  font-weight: 600;
 	  margin-left: 12px;
+	  border: 1px solid #4b5563;
+	  font-size: 14px;
 	}
 
 	/* Main Content */
@@ -86,80 +96,118 @@
 	  padding: 24px;
 	}
 
-	/*Base Table Style*/
-    table { border-collapse: collapse; width: 100%; background: white; border-radius: 8px; overflow: hidden; }
-    th, td { border: 1px solid #ddd; vertical-align: top; padding: 8px; }
-    th { background: #f4f4f4; }
-    .report { cursor: pointer; color: #0066cc; margin-bottom: 4px; }
-    .report:hover { text-decoration: underline; }
-    .category { font-weight: bold; margin-top: 6px; }
-	/* Table Color Style*/
-	table {
-	border-collapse: collapse;
-	width: 100%;
+	.table-container {
+	  overflow-x: auto;
 	}
 
+	.table-wrapper {
+	  min-width: fit-content;
+	}
+
+	/*Base Table Style*/
+    table { 
+		border-collapse: collapse; 
+		width: 100%; 
+		background: white; 
+		border-radius: 4px; 
+		overflow: hidden;
+		border: 1px solid #d1d5db;
+	}
+    th, td { border: 1px solid #e5e7eb; vertical-align: top; padding: 10px; }
+    .report { cursor: pointer; color: #374151; margin-bottom: 4px; }
+    .report:hover { text-decoration: underline; }
+    .category { font-weight: bold; margin-top: 6px; }
+
 	th {
-	background: #2c3e50;
+	background: #374151;
 	color: white;
-	padding: 10px;
+	padding: 12px 10px;
+	font-weight: 500;
+	font-size: 14px;
 	}
 
 	td {
 	vertical-align: top;
-	padding: 10px;
-	background: #f9f9f9;
+	padding: 12px 10px;
+	background: white;
+	font-size: 14px;
 	}
 
 	td:nth-child(even) {
-	background: #f1f5f9;
+	background: #f9fafb;
 	}
 
 	.category {
-	font-weight: bold;
-	color: #555;
+	font-weight: 600;
+	color: #1f2937;
 	margin-top: 8px;
-	border-bottom: 1px solid #ddd;
+	margin-bottom: 6px;
+	padding-bottom: 4px;
+	border-bottom: 1px solid #e5e7eb;
+	font-size: 13px;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
 	}
 
 	.report {
 	cursor: pointer;
-	color: #2563eb;
+	color: #4b5563;
 	margin: 4px 0;
+	padding: 2px 0;
+	font-weight: 400;
 	}
 
 	.report:hover {
+	color: #1f2937;
 	text-decoration: underline;
 	}
 
 	.report.exported {
-	color: #166534;
-	font-weight: bold;
+	color: #059669;
+	font-weight: 500;
 	cursor: default;
 	}
 
 	td.exported {
-	background: #dcfce7 !important;
+	background: #ecfdf5 !important;
 	}
 
 	/* Multiselect Style */
 	#filters {
-	margin-bottom: 12px;
-	padding: 12px 16px;
+	margin: 0;
+	padding: 14px 24px;
 	background: white;
-	border: 1px solid #e5e7eb;
-	border-radius: 8px;
+	border-bottom: 1px solid #d1d5db;
+	position: sticky;
+	top: 53px;
+	z-index: 99;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	}
+
+	#filters strong {
+		color: #1f2937;
+		font-weight: 500;
+		font-size: 14px;
 	}
 
 	.filter-option {
-	margin-right: 12px;
+	margin-right: 16px;
 	cursor: pointer;
+	color: #4b5563;
+	font-size: 14px;
+	}
+
+	.filter-option input {
+		margin-right: 4px;
 	}
 
 	h2 {
 	  margin-top: 0;
 	  margin-bottom: 16px;
-	  color: #2c3e50;
+	  color: #1f2937;
+	  font-weight: 600;
+	  font-size: 18px;
+	  letter-spacing: -0.3px;
 	}
 
   </style>
@@ -168,7 +216,7 @@
 
 <div class="topbar">
   <div style="display: flex; align-items: center;">
-    <h1>📊 SEC Filings Exporter</h1>
+    <h1>SEC Filings Exporter</h1>
     <span class="current-ticker">{{ ticker }}</span>
   </div>
   
@@ -176,14 +224,12 @@
     <input 
       type="text" 
       id="ticker-change" 
-      placeholder="Change ticker..." 
+      placeholder="Ticker..." 
       pattern="[A-Za-z]{1,5}"
     >
     <button onclick="changeTicker()">Go</button>
   </div>
 </div>
-
-<div class="content">
 
 <div id="filters">
   <strong>Filter filings:</strong>
@@ -199,7 +245,12 @@
   {% endfor %}
 </div>
 
+<div class="content">
+
 <h2>Filings</h2>
+
+<div class="table-container">
+<div class="table-wrapper">
 
 <table>
   <thead>
@@ -240,6 +291,9 @@
     </tr>
   </tbody>
 </table>
+
+</div>
+</div>
 
 </div>
 

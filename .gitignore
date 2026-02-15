@@ -1,0 +1,5 @@
+exports/
+
+# Python temp files
+__pycache__/
+*.py[cod]
