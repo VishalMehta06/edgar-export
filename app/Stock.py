@@ -59,28 +59,3 @@ class Stock:
 		tables = pd.read_html(resp.text)
 		df = tables[0]
 		df.to_excel(f"{filename}")
-
-	def export_report(self, filing: dict, report_name: str, filename: str) -> \
-		None:
-		"""
-		Export a report from a URL to excel. 
-		
-		:param filing: An element from `self.filings` to export a report from
-		:type filing: dict
-		:param report_name: The `name_short` of the report to export.
-		:type report_name: str
-		:param filename: The output filename.
-		:type filename: str
-		"""
-		# Get the URL of the report by iterating through all reports
-		url = ""
-		all_reports = filing["reports"]["document"] + \
-					  filing["reports"]["statement"] + \
-					  filing["reports"]["disclosure"]
-		for r in all_reports:
-			if r["name_short"] == report_name:
-				url = r["url"]
-				break
-		
-		self.export_url(url, filename)
-	
