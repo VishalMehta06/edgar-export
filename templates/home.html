@@ -1,0 +1,168 @@
+<!doctype html>
+<html>
+<head>
+  <title>SEC Filings Exporter</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 12px;
+      padding: 48px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 32px;
+      color: #2c3e50;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .subtitle {
+      color: #64748b;
+      text-align: center;
+      margin-bottom: 32px;
+      font-size: 16px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    label {
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    input[type="text"] {
+      padding: 14px 16px;
+      font-size: 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    button {
+      padding: 14px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .examples {
+      margin-top: 24px;
+      padding: 16px;
+      background: #f8fafc;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .examples strong {
+      color: #334155;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .ticker-link {
+      color: #667eea;
+      text-decoration: none;
+      margin-right: 12px;
+      cursor: pointer;
+    }
+
+    .ticker-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 SEC Filings Exporter</h1>
+    <p class="subtitle">Export company filings to Excel</p>
+    
+    <form action="/filings/" method="get" onsubmit="return handleSubmit(event)">
+      <div>
+        <label for="ticker">Enter Stock Ticker</label>
+        <input 
+          type="text" 
+          id="ticker" 
+          name="ticker" 
+          placeholder="e.g., AAPL, MSFT, TSLA" 
+          required
+          pattern="[A-Za-z]{1,5}"
+          title="Please enter a valid stock ticker (1-5 letters)"
+        >
+      </div>
+      <button type="submit">View Filings →</button>
+    </form>
+
+    <div class="examples">
+      <strong>Popular tickers:</strong>
+      <a href="#" class="ticker-link" onclick="setTicker('AAPL')">AAPL</a>
+      <a href="#" class="ticker-link" onclick="setTicker('MSFT')">MSFT</a>
+      <a href="#" class="ticker-link" onclick="setTicker('GOOGL')">GOOGL</a>
+      <a href="#" class="ticker-link" onclick="setTicker('TSLA')">TSLA</a>
+      <a href="#" class="ticker-link" onclick="setTicker('AMZN')">AMZN</a>
+    </div>
+  </div>
+
+  <script>
+    function handleSubmit(event) {
+      event.preventDefault();
+      const ticker = document.getElementById('ticker').value.toUpperCase().trim();
+      if (ticker) {
+        window.location.href = `/filings/${ticker}`;
+      }
+      return false;
+    }
+
+    function setTicker(ticker) {
+      document.getElementById('ticker').value = ticker;
+      document.querySelector('form').dispatchEvent(new Event('submit'));
+    }
+  </script>
+</body>
+</html>

@@ -10,19 +10,38 @@ EXPORT_DIR = "exports"
 os.makedirs(EXPORT_DIR, exist_ok=True)
 
 client = Client("Vishal Mehta, vvmehta06@gmail.com")
-stock = Stock(ticker="AAPL", client=client)  # already initialized
+
+# Cache stocks to avoid re-fetching
+stock_cache = {}
+
+def get_stock(ticker):
+	"""Get or create a Stock instance for the given ticker"""
+	ticker = ticker.upper()
+	if ticker not in stock_cache:
+		stock_cache[ticker] = Stock(ticker=ticker, client=client)
+	return stock_cache[ticker]
 
 @app.route("/")
-def filings():
-	filings = Utils.normalize_filings(stock.filings)
-	filing_types = Utils.get_filing_types(stock.filings)
+def home():
+	"""Home page with ticker input"""
+	return render_template("home.html")
 
-	return render_template(
-		"filings.html",
-		filings=filings,
-		filing_types=filing_types,
-		ticker=stock.ticker
-	)
+@app.route("/filings/<ticker>")
+def filings(ticker):
+	"""Display filings for a specific ticker"""
+	try:
+		stock = get_stock(ticker)
+		filings = Utils.normalize_filings(stock.filings)
+		filing_types = Utils.get_filing_types(stock.filings)
+
+		return render_template(
+			"filings.html",
+			filings=filings,
+			filing_types=filing_types,
+			ticker=stock.ticker
+		)
+	except Exception as e:
+		return render_template("error.html", ticker=ticker, error=str(e))
 
 @app.route("/export", methods=["POST"])
 def export_report():
@@ -39,6 +58,7 @@ def export_report():
 
 	out_path = os.path.join(EXPORT_DIR, filename)
 
+	stock = get_stock(ticker)
 	stock.export_url(url, out_path)
 
 	return jsonify({"status": "ok"})

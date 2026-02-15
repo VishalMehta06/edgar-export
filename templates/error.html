@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+<head>
+  <title>Error - SEC Filings Exporter</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 12px;
+      padding: 48px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .error-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 28px;
+      color: #dc2626;
+      margin-bottom: 12px;
+    }
+
+    .ticker {
+      color: #667eea;
+      font-weight: 700;
+    }
+
+    p {
+      color: #64748b;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .error-details {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+      text-align: left;
+      font-size: 14px;
+      color: #991b1b;
+    }
+
+    button {
+      padding: 14px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="error-icon">⚠️</div>
+    <h1>Ticker Not Found</h1>
+    <p>Unable to load filings for ticker <span class="ticker">{{ ticker }}</span></p>
+    
+    <div class="error-details">
+      <strong>Error:</strong><br>
+      {{ error }}
+    </div>
+
+    <p>Please check the ticker symbol and try again.</p>
+    
+    <button onclick="window.location.href='/'">← Back to Home</button>
+  </div>
+</body>
+</html>
