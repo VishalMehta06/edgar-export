@@ -64,7 +64,6 @@ class Stock:
 		"""
 		resp = self.client._fetch_response(url)
 		tables = pd.read_html(resp.text)
-		print(report_category)
 		if report_category == "statement":
 			df = tables[0]
 			df.to_excel(f"{filename}")
