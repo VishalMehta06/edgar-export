@@ -228,7 +228,9 @@
 
 <div class="topbar">
   <div style="display: flex; align-items: center;">
-    <h1>SEC Filings Exporter</h1>
+    <h1> <a href="{{ url_for('home') }}" 
+			style="text-decoration: none; color: inherit;"> 
+			SEC Filings Exporter </a> </h1>
     <span class="current-ticker">{{ ticker }}</span>
   </div>
   
