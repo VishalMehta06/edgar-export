@@ -1,6 +1,8 @@
 import requests
 import pandas as pd
 
+import traceback
+
 from app.Client import Client
 
 class Stock:
@@ -39,8 +41,8 @@ class Stock:
 					data = self.client.get_filing_data(self.cik, filing["accn"])
 					selected_filings.append({"metadata": filing, 
 							  				 "reports": data})
-				except requests.exceptions.HTTPError:
-					# Filings causing this error have not been indexed in a 
+				except:
+					# Filings causing any error have not been indexed in a 
 					# similar way, we must ignore them.
 					pass
 		

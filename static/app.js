@@ -3,24 +3,47 @@ document.querySelectorAll(".report").forEach(report => {
     if (report.classList.contains("exported")) return;
 
     const cell = report.closest("td");
+    const originalText = report.innerText;
 
     report.innerText = "Exporting…";
 
-    await fetch("/export", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        url: report.dataset.url,
-        report_name: report.dataset.reportName,
-        filing_date: report.dataset.filingDate,
-        filing_type: report.dataset.filingType,
-        ticker: report.dataset.ticker
-      })
-    });
+    try {
+      const response = await fetch("/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: report.dataset.url,
+          report_name: report.dataset.reportName,
+          filing_date: report.dataset.filingDate,
+          filing_type: report.dataset.filingType,
+          ticker: report.dataset.ticker
+        })
+      });
 
-    report.classList.add("exported");
-    report.innerText = "✓ " + report.dataset.reportName;
-    cell.classList.add("exported");
+      const result = await response.json();
+
+      if (result.status === "ok") {
+        // Trigger download
+        const downloadUrl = `${result.download_url}?filename=${encodeURIComponent(result.filename)}`;
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = result.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Mark as exported
+        report.classList.add("exported");
+        report.innerText = "✓ " + report.dataset.reportName;
+        cell.classList.add("exported");
+      } else {
+        report.innerText = "Error - " + originalText;
+        alert("Export failed: " + (result.message || "Unknown error"));
+      }
+    } catch (error) {
+      report.innerText = "Error - " + originalText;
+      alert("Export failed: " + error.message);
+    }
   });
 });
 
