@@ -48,7 +48,8 @@ class Stock:
 		
 		return selected_filings
 	
-	def export_url(self, url: str, filename: str) -> None:
+	def export_url(self, url: str, filename: str, 
+				   report_category: str = "statement") -> None:
 		"""
 		Export a report from a URL to excel.
 
@@ -56,8 +57,18 @@ class Stock:
 		:type url: str
 		:param filename: The output filename
 		:type filename: str
+		:param report_category: The category of the report. Either "document", 
+		"statement", or "disclosure". If it is not supplied, it is assumed the 
+		report is a "statement". 
+		:type report_category: str 
 		"""
 		resp = self.client._fetch_response(url)
 		tables = pd.read_html(resp.text)
-		df = tables[0]
-		df.to_excel(f"{filename}")
+		print(report_category)
+		if report_category == "statement":
+			df = tables[0]
+			df.to_excel(f"{filename}")
+		elif report_category == "disclosure" or report_category == "document":
+			with pd.ExcelWriter(filename, "openpyxl") as writer:
+				[t.to_excel(writer, f"Sheet {i+1}") 
+	 			 for i, t in enumerate(tables)]

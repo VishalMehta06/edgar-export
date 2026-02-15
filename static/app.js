@@ -16,7 +16,8 @@ document.querySelectorAll(".report").forEach(report => {
           report_name: report.dataset.reportName,
           filing_date: report.dataset.filingDate,
           filing_type: report.dataset.filingType,
-          ticker: report.dataset.ticker
+          ticker: report.dataset.ticker,
+          category: report.dataset.category
         })
       });
 
