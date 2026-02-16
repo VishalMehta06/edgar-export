@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file
+from flask import Flask, render_template, request, jsonify, session, redirect, \
+	url_for, send_file
 from app.Stock import Stock
 from app.Client import Client
 import app.Utils as Utils
@@ -6,7 +7,8 @@ import os
 import tempfile
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+app.secret_key = os.environ.get('SECRET_KEY', \
+								'dev-secret-key-change-in-production')
 
 # Cache stocks to avoid re-fetching
 stock_cache = {}
@@ -100,7 +102,8 @@ def export_report():
 		return jsonify({"status": "error", "message": "Not authenticated"}), 401
 	
 	# Create temporary file
-	temp_file = tempfile.NamedTemporaryFile(mode='wb', suffix='.xlsx', delete=False)
+	temp_file = tempfile.NamedTemporaryFile(mode='wb', suffix='.xlsx', 
+										    delete=False)
 	temp_path = temp_file.name
 	temp_file.close()
 	
@@ -141,7 +144,8 @@ def download_file(temp_filename):
 			temp_path,
 			as_attachment=True,
 			download_name=filename,
-			mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+			mimetype='application/vnd.openxmlformats-officedocument. \
+				spreadsheetml.sheet'
 		)
 		
 		# Clean up temp file after sending
