@@ -76,7 +76,23 @@
       font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
     }
 
-    input[type="text"]:focus {
+    input[type="number"] {
+      padding: 12px 14px;
+      font-size: 15px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      transition: all 0.15s;
+      font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+      appearance: textfield;
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      appearance: none;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus {
       outline: none;
       border-color: #4b5563;
       box-shadow: 0 0 0 3px rgba(75, 85, 99, 0.1);
@@ -248,7 +264,7 @@
           type="number"
           id="years"
           name="years"
-          value="10"
+          placeholder="Years"
           min="1"
           max="30"
           title="Number of years of filings to load (1–30)"
@@ -280,17 +296,37 @@
       startProgress();
     }
 
+    // Phase 1: drift toward 70% while the server is working.
+    // Phase 2: once the new page has loaded, run quickly to 100%.
+    let progressInterval = null;
+    let currentWidth = 0;
+
     function startProgress() {
       const bar = document.getElementById('progress-bar');
-      let width = 0;
-      // Simulate progress: fast at first, asymptotically approach 60%
-      const interval = setInterval(() => {
-        const remaining = 60 - width;
-        width += remaining * 0.04;
-        bar.style.width = Math.min(width, 60) + '%';
-        if (width >= 60) clearInterval(interval);
+      currentWidth = 0;
+      clearInterval(progressInterval);
+      progressInterval = setInterval(() => {
+        const remaining = 70 - currentWidth;
+        currentWidth += remaining * 0.04;
+        bar.style.width = Math.min(currentWidth, 70) + '%';
+        if (currentWidth >= 70) clearInterval(progressInterval);
       }, 120);
     }
+
+    // When the new page begins to paint, sprint the bar to 100%.
+    window.addEventListener('pageshow', () => {
+      const bar = document.getElementById('progress-bar');
+      if (!bar) return;
+      clearInterval(progressInterval);
+      const sprint = setInterval(() => {
+        currentWidth += (100 - currentWidth) * 0.12;
+        bar.style.width = Math.min(currentWidth, 100) + '%';
+        if (currentWidth >= 99.5) {
+          bar.style.width = '100%';
+          clearInterval(sprint);
+        }
+      }, 60);
+    });
 
     function handleSubmit(event) {
       event.preventDefault();

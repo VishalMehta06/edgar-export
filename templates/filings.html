@@ -65,32 +65,14 @@
 	}
 
 	.ticker-input-container input[type="number"] {
-	  padding: 8px 8px;
-	  border: 1px solid #4b5563;
-	  border-radius: 4px;
-	  background: #374151;
-	  color: white;
-	  font-size: 14px;
 	  width: 64px;
-	  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-	  -moz-appearance: textfield;
+	  text-transform: none;
+	  appearance: textfield;
 	}
 
 	.ticker-input-container input[type="number"]::-webkit-outer-spin-button,
 	.ticker-input-container input[type="number"]::-webkit-inner-spin-button {
-	  -webkit-appearance: none;
-	}
-
-	.ticker-input-container input[type="number"]:focus {
-	  outline: none;
-	  background: #4b5563;
-	  border-color: #6b7280;
-	}
-
-	.years-label {
-	  color: #9ca3af;
-	  font-size: 13px;
-	  white-space: nowrap;
+	  appearance: none;
 	}
 
 	.ticker-input-container button {
@@ -337,7 +319,7 @@
       <input
         type="number"
         id="years-change"
-        value="{{ years }}"
+        placeholder="YEARS..."
         min="1"
         max="30"
         title="Years of filings"
@@ -426,17 +408,37 @@ function showLoader(ticker, years) {
   startProgress();
 }
 
+// Phase 1: drift toward 70% while the server is working.
+// Phase 2: once the new page has loaded, run quickly to 100%.
+let progressInterval = null;
+let currentWidth = 0;
+
 function startProgress() {
   const bar = document.getElementById('progress-bar');
-  let width = 0;
-  // Simulate progress: fast at first, asymptotically approach 60%
-  const interval = setInterval(() => {
-    const remaining = 60 - width;
-    width += remaining * 0.04;
-    bar.style.width = Math.min(width, 60) + '%';
-    if (width >= 60) clearInterval(interval);
+  currentWidth = 0;
+  clearInterval(progressInterval);
+  progressInterval = setInterval(() => {
+    const remaining = 70 - currentWidth;
+    currentWidth += remaining * 0.04;
+    bar.style.width = Math.min(currentWidth, 70) + '%';
+    if (currentWidth >= 70) clearInterval(progressInterval);
   }, 120);
 }
+
+// When the new page begins to paint, sprint the bar to 100%.
+window.addEventListener('pageshow', () => {
+  const bar = document.getElementById('progress-bar');
+  if (!bar) return;
+  clearInterval(progressInterval);
+  const sprint = setInterval(() => {
+    currentWidth += (100 - currentWidth) * 0.12;
+    bar.style.width = Math.min(currentWidth, 100) + '%';
+    if (currentWidth >= 99.5) {
+      bar.style.width = '100%';
+      clearInterval(sprint);
+    }
+  }, 60);
+});
 
 function changeTicker() {
   const input = document.getElementById('ticker-change');
