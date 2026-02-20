@@ -210,4 +210,4 @@ def logout():
 def favicon():
 	return send_from_directory(app.static_folder, 'favicon.ico')
 
-app.run("0.0.0.0", 8080)
+app.run("localhost", 8080)
