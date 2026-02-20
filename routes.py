@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, \
-	url_for, send_file
+	url_for, send_file, send_from_directory
 from app.Stock import Stock
 from app.Client import Client
 from app.logger import get_logger
@@ -206,4 +206,8 @@ def logout():
 	logger.info("User %r logged out", user)
 	return redirect(url_for('setup'))
 
-app.run("localhost", 8080)
+@app.route('/favicon.ico')
+def favicon():
+	return send_from_directory(app.static_folder, 'favicon.ico')
+
+app.run("0.0.0.0", 8080)
