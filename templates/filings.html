@@ -222,9 +222,71 @@
 	  letter-spacing: -0.3px;
 	}
 
-  </style>
+	/* Loading overlay */
+	#loading-overlay {
+	  display: none;
+	  position: fixed;
+	  inset: 0;
+	  background: rgba(243, 244, 246, 0.92);
+	  z-index: 200;
+	  flex-direction: column;
+	  align-items: center;
+	  justify-content: center;
+	}
+
+	.loader-card {
+	  background: white;
+	  border: 1px solid #d1d5db;
+	  border-radius: 4px;
+	  padding: 40px 56px;
+	  text-align: center;
+	  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	  min-width: 320px;
+	}
+
+	.loader-card h2 {
+	  font-size: 20px;
+	  font-weight: 600;
+	  color: #1f2937;
+	  margin: 0 0 6px;
+	  letter-spacing: -0.3px;
+	}
+
+	.loader-card p {
+	  color: #6b7280;
+	  font-size: 14px;
+	  margin: 0 0 24px;
+	}
+
+	.progress-track {
+	  background: #e5e7eb;
+	  border-radius: 99px;
+	  height: 6px;
+	  overflow: hidden;
+	}
+
+	#progress-bar {
+	  height: 100%;
+	  width: 0%;
+	  background: #374151;
+	  border-radius: 99px;
+	  transition: width 0.12s ease-out;
+	}
+
+</style>
 </head>
 <body>
+
+<!-- Loading overlay — shown while a new ticker's filings page is loading -->
+<div id="loading-overlay">
+  <div class="loader-card">
+    <h2>Loading <span id="loader-ticker"></span></h2>
+    <p>Fetching filings from SEC EDGAR…</p>
+    <div class="progress-track">
+      <div id="progress-bar"></div>
+    </div>
+  </div>
+</div>
 
 <div class="topbar">
   <div style="display: flex; align-items: center;">
@@ -319,10 +381,28 @@
 </div>
 
 <script>
+function showLoader(ticker) {
+  document.getElementById('loader-ticker').textContent = ticker;
+  document.getElementById('loading-overlay').style.display = 'flex';
+  startProgress();
+}
+
+function startProgress() {
+  const bar = document.getElementById('progress-bar');
+  let width = 0;
+  const interval = setInterval(() => {
+    const remaining = 90 - width;
+    width += remaining * 0.04;
+    bar.style.width = Math.min(width, 90) + '%';
+    if (width >= 90) clearInterval(interval);
+  }, 120);
+}
+
 function changeTicker() {
   const input = document.getElementById('ticker-change');
   const ticker = input.value.toUpperCase().trim();
   if (ticker && ticker.match(/^[A-Z]{1,5}$/)) {
+    showLoader(ticker);
     window.location.href = `/filings/${ticker}`;
   } else {
     alert('Please enter a valid ticker symbol (1-5 letters)');

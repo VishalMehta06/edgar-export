@@ -2,13 +2,26 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 LOG_FILE = os.path.join(os.path.dirname(__file__), "..", "logs", "app.log")
-LOG_LEVEL = logging.DEBUG
+
+# LOG_MODE controls verbosity. Set to "DEBUG" in .env to enable full logging.
+# Defaults to "WARNING" for normal operation (fewer I/O writes).
+_mode = os.getenv("LOG_MODE", "WARNING").upper()
+LOG_LEVEL = getattr(logging, _mode, logging.WARNING)
+
 
 def get_logger(name: str) -> logging.Logger:
 	"""
 	Get a named logger that writes to both the log file and the console.
 	All loggers share the same handlers, configured on the root 'edgar' logger.
+
+	Log verbosity is controlled by the LOG_MODE environment variable (in .env):
+	  - LOG_MODE=WARNING  (default) — only warnings and errors are recorded
+	  - LOG_MODE=DEBUG             — full debug output
 
 	:param name: Typically __name__ from the calling module.
 	:type name: str
@@ -34,9 +47,9 @@ def get_logger(name: str) -> logging.Logger:
 		file_handler.setLevel(LOG_LEVEL)
 		file_handler.setFormatter(formatter)
 
-		# Console handler — only WARNING and above to keep stdout clean
+		# Console handler — mirrors file handler level
 		console_handler = logging.StreamHandler()
-		console_handler.setLevel(logging.WARNING)
+		console_handler.setLevel(LOG_LEVEL)
 		console_handler.setFormatter(formatter)
 
 		root_logger.addHandler(file_handler)

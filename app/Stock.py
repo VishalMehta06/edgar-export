@@ -1,5 +1,6 @@
 import pandas as pd
 from io import StringIO
+from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
@@ -16,7 +17,8 @@ class Stock:
 	"""
 
 	def __init__(self, client: Client, ticker: str, 
-			  	 filing_forms: list[str] = ["10-K", "10-Q"]):
+			  	 filing_forms: list[str] = ["10-K", "10-Q"],
+				 years: int = 10):
 		"""		
 		:param ticker: The ticker of the stock. Capitalization doesn't matter.
 		:type ticker: str
@@ -24,10 +26,14 @@ class Stock:
 		:type client: Client
 		:param filing_forms: A list of strings of filing 'form's to track.
 		:type filing_forms: list[str]
+		:param years: Only include filings from the last N years. Defaults to 10.
+		:type years: int
 		"""
 		self.ticker = ticker.upper()
 		self.client = client
-		logger.info("Initializing Stock for ticker=%s", self.ticker)
+		self.years = years
+		logger.info("Initializing Stock for ticker=%s (last %d years)", 
+					self.ticker, self.years)
 		self.cik = client.get_cik(ticker)
 
 		if not self.cik:
@@ -44,45 +50,67 @@ class Stock:
 
 	def _init_filings(self, filing_forms: list[str]) -> list[dict]:
 		"""
-		Initialize self.filings. 
+		Initialize self.filings. Only includes filings within the last
+		`self.years` years.
 		
 		:param filing_forms: A list of strings of filing 'form's to track.
 		:type filing_forms: list[str]
 		"""
 		all_filings = self.client.get_filings(self.cik)
+
+		# Compute the earliest date we care about
+		cutoff_date = datetime.now() - timedelta(days=365 * self.years)
 		logger.debug(
-			"Filtering %d total filings by forms=%s for ticker=%s",
-			len(all_filings), filing_forms, self.ticker
+			"Filtering %d total filings by forms=%s and cutoff=%s for ticker=%s",
+			len(all_filings), filing_forms, cutoff_date.date(), self.ticker
 		)
 
 		selected_filings = []
 
 		for filing in all_filings:
-			if filing["form"] in filing_forms:
-				accn = filing["accn"]
-				try:
-					data = self.client.get_filing_data(self.cik, accn)
-					selected_filings.append({
-						"metadata": filing,
-						"reports": data
-					})
-					logger.debug(
-						"Added filing accn=%s form=%s for ticker=%s",
+			# Filter by form type first (cheap)
+			if filing["form"] not in filing_forms:
+				continue
+
+			# Filter by date — skip filings older than the cutoff
+			try:
+				filing_date = datetime.strptime(filing["filingDate"], "%Y-%m-%d")
+			except (ValueError, KeyError):
+				# If we can't parse the date, include it to be safe
+				filing_date = datetime.now()
+
+			if filing_date < cutoff_date:
+				logger.debug(
+					"Skipping filing accn=%s form=%s date=%s — older than %d years",
+					filing.get("accn"), filing["form"],
+					filing.get("filingDate"), self.years
+				)
+				continue
+
+			accn = filing["accn"]
+			try:
+				data = self.client.get_filing_data(self.cik, accn)
+				selected_filings.append({
+					"metadata": filing,
+					"reports": data
+				})
+				logger.debug(
+					"Added filing accn=%s form=%s for ticker=%s",
+					accn, filing["form"], self.ticker
+				)
+			except Exception as e:
+				# 404s are normal — many filings aren't indexed scrapably
+				status_code = getattr(getattr(e, "response", None), "status_code", None)
+				if status_code == 404:
+					logger.info(
+						"Skipping filing accn=%s form=%s for ticker=%s: 404 Not Found",
 						accn, filing["form"], self.ticker
 					)
-				except Exception as e:
-					# 404s are normal — many filings aren't indexed scrapably
-					status_code = getattr(getattr(e, "response", None), "status_code", None)
-					if status_code == 404:
-						logger.info(
-							"Skipping filing accn=%s form=%s for ticker=%s: 404 Not Found",
-							accn, filing["form"], self.ticker
-						)
-					else:
-						logger.warning(
-							"Skipping filing accn=%s form=%s for ticker=%s: %s",
-							accn, filing["form"], self.ticker, e
-						)
+				else:
+					logger.warning(
+						"Skipping filing accn=%s form=%s for ticker=%s: %s",
+						accn, filing["form"], self.ticker, e
+					)
 
 		logger.info(
 			"_init_filings complete for ticker=%s: %d/%d filings selected",

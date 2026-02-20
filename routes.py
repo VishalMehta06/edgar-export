@@ -7,13 +7,20 @@ import app.Utils as Utils
 import os
 import tempfile
 
+from dotenv import load_dotenv
+load_dotenv()
+
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', \
-								'dev-secret-key-change-in-production')
+app.secret_key = os.environ.get('SECRET_KEY')
+if not app.secret_key:
+	raise RuntimeError(
+		"SECRET_KEY is not set. Please define it in your .env file."
+	)
 
 logger = get_logger(__name__)
 
-# Cache stocks to avoid re-fetching
+# Cache stocks by ticker — shared across all users since filings data is public.
+# Keys are uppercase ticker strings; values are Stock instances.
 stock_cache = {}
 
 def get_client():
@@ -24,21 +31,25 @@ def get_client():
 	return Client(user_agent)
 
 def get_stock(ticker):
-	"""Get or create a Stock instance for the given ticker"""
+	"""Get or create a Stock instance for the given ticker.
+	
+	The cache is keyed by ticker only. Because all data comes from the public
+	SEC EDGAR API and no user-specific data is stored in a Stock instance, it
+	is safe to share cached results across different users/sessions.
+	"""
 	client = get_client()
 	if not client:
 		return None
 	
 	ticker = ticker.upper()
-	cache_key = f"{session.get('user_agent')}:{ticker}"
 	
-	if cache_key not in stock_cache:
+	if ticker not in stock_cache:
 		logger.info("Cache miss for ticker=%s — creating new Stock instance", ticker)
-		stock_cache[cache_key] = Stock(ticker=ticker, client=client)
+		stock_cache[ticker] = Stock(ticker=ticker, client=client)
 	else:
 		logger.debug("Cache hit for ticker=%s", ticker)
 
-	return stock_cache[cache_key]
+	return stock_cache[ticker]
 
 @app.route("/")
 def home():
