@@ -217,7 +217,7 @@
   <div id="loading-overlay">
     <div class="loader-card">
       <h2>Loading <span id="loader-ticker"></span></h2>
-      <p>Fetching filings from SEC EDGAR…</p>
+      <p>Fetching <span id="loader-years"></span> of filings from SEC EDGAR…</p>
       <div class="progress-track">
         <div id="progress-bar"></div>
       </div>
@@ -242,6 +242,18 @@
           title="Please enter a valid stock ticker (1-5 letters)"
         >
       </div>
+      <div class="form-ticker-input">
+        <label for="years">Years of Filings</label>
+        <input
+          type="number"
+          id="years"
+          name="years"
+          value="10"
+          min="1"
+          max="30"
+          title="Number of years of filings to load (1–30)"
+        >
+      </div>
       <button type="submit">View Filings</button>
     </form>
 
@@ -260,8 +272,10 @@
   </div>
 
   <script>
-    function showLoader(ticker) {
+    function showLoader(ticker, years) {
       document.getElementById('loader-ticker').textContent = ticker;
+      document.getElementById('loader-years').textContent =
+        `${years} year${years == 1 ? '' : 's'}`;
       document.getElementById('loading-overlay').style.display = 'flex';
       startProgress();
     }
@@ -269,21 +283,22 @@
     function startProgress() {
       const bar = document.getElementById('progress-bar');
       let width = 0;
-      // Simulate progress: fast at first, asymptotically approach 90%
+      // Simulate progress: fast at first, asymptotically approach 60%
       const interval = setInterval(() => {
-        const remaining = 90 - width;
+        const remaining = 60 - width;
         width += remaining * 0.04;
-        bar.style.width = Math.min(width, 90) + '%';
-        if (width >= 90) clearInterval(interval);
+        bar.style.width = Math.min(width, 60) + '%';
+        if (width >= 60) clearInterval(interval);
       }, 120);
     }
 
     function handleSubmit(event) {
       event.preventDefault();
       const ticker = document.getElementById('ticker').value.toUpperCase().trim();
+      const years = parseInt(document.getElementById('years').value) || 10;
       if (ticker) {
-        showLoader(ticker);
-        window.location.href = `/filings/${ticker}`;
+        showLoader(ticker, years);
+        window.location.href = `/filings/${ticker}?years=${years}`;
       }
       return false;
     }

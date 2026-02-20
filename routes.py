@@ -30,26 +30,31 @@ def get_client():
 		return None
 	return Client(user_agent)
 
-def get_stock(ticker):
-	"""Get or create a Stock instance for the given ticker.
+def get_stock(ticker, years=10):
+	"""Get or create a Stock instance for the given ticker and year window.
 	
-	The cache is keyed by ticker only. Because all data comes from the public
-	SEC EDGAR API and no user-specific data is stored in a Stock instance, it
-	is safe to share cached results across different users/sessions.
+	The cache is keyed by (ticker, years). Because all data comes from the
+	public SEC EDGAR API and no user-specific data is stored in a Stock
+	instance, it is safe to share cached results across different
+	users/sessions.
 	"""
 	client = get_client()
 	if not client:
 		return None
 	
 	ticker = ticker.upper()
+	cache_key = (ticker, years)
 	
-	if ticker not in stock_cache:
-		logger.info("Cache miss for ticker=%s — creating new Stock instance", ticker)
-		stock_cache[ticker] = Stock(ticker=ticker, client=client)
+	if cache_key not in stock_cache:
+		logger.info(
+			"Cache miss for ticker=%s years=%d — creating new Stock instance", 
+			ticker, years
+		)
+		stock_cache[cache_key] = Stock(ticker=ticker, client=client, years=years)
 	else:
-		logger.debug("Cache hit for ticker=%s", ticker)
+		logger.debug("Cache hit for ticker=%s years=%d", ticker, years)
 
-	return stock_cache[ticker]
+	return stock_cache[cache_key]
 
 @app.route("/")
 def home():
@@ -81,13 +86,20 @@ def filings(ticker):
 		return redirect(url_for('setup'))
 	
 	try:
-		stock = get_stock(ticker)
+		# Read years from query string; clamp to a sane range
+		try:
+			years = int(request.args.get('years', 10))
+			years = max(1, min(years, 30))
+		except (ValueError, TypeError):
+			years = 10
+
+		stock = get_stock(ticker, years=years)
 		if not stock:
 			return redirect(url_for('setup'))
 
 		logger.info(
-			"Rendering filings for ticker=%s: %d filing(s)", 
-			ticker, len(stock.filings)
+			"Rendering filings for ticker=%s years=%d: %d filing(s)", 
+			ticker, years, len(stock.filings)
 		)
 
 		normalized = Utils.normalize_filings(stock.filings)
@@ -98,6 +110,7 @@ def filings(ticker):
 			filings=normalized,
 			filing_types=filing_types,
 			ticker=stock.ticker,
+			years=years,
 			user_name=session.get('user_name')
 		)
 	except Exception as e:

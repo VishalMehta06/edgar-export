@@ -64,6 +64,35 @@
 	  border-color: #6b7280;
 	}
 
+	.ticker-input-container input[type="number"] {
+	  padding: 8px 8px;
+	  border: 1px solid #4b5563;
+	  border-radius: 4px;
+	  background: #374151;
+	  color: white;
+	  font-size: 14px;
+	  width: 64px;
+	  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+	  -moz-appearance: textfield;
+	}
+
+	.ticker-input-container input[type="number"]::-webkit-outer-spin-button,
+	.ticker-input-container input[type="number"]::-webkit-inner-spin-button {
+	  -webkit-appearance: none;
+	}
+
+	.ticker-input-container input[type="number"]:focus {
+	  outline: none;
+	  background: #4b5563;
+	  border-color: #6b7280;
+	}
+
+	.years-label {
+	  color: #9ca3af;
+	  font-size: 13px;
+	  white-space: nowrap;
+	}
+
 	.ticker-input-container button {
 	  padding: 8px 16px;
 	  background: #6b7280;
@@ -281,7 +310,7 @@
 <div id="loading-overlay">
   <div class="loader-card">
     <h2>Loading <span id="loader-ticker"></span></h2>
-    <p>Fetching filings from SEC EDGAR…</p>
+    <p>Fetching <span id="loader-years"></span> of filings from SEC EDGAR…</p>
     <div class="progress-track">
       <div id="progress-bar"></div>
     </div>
@@ -304,6 +333,14 @@
         placeholder="Ticker..." 
 		autocomplete="off"
         pattern="[A-Za-z]{1,5}"
+      >
+      <input
+        type="number"
+        id="years-change"
+        value="{{ years }}"
+        min="1"
+        max="30"
+        title="Years of filings"
       >
       <button onclick="changeTicker()">Go</button>
     </div>
@@ -381,8 +418,10 @@
 </div>
 
 <script>
-function showLoader(ticker) {
+function showLoader(ticker, years) {
   document.getElementById('loader-ticker').textContent = ticker;
+  document.getElementById('loader-years').textContent =
+    `${years} year${years == 1 ? '' : 's'}`;
   document.getElementById('loading-overlay').style.display = 'flex';
   startProgress();
 }
@@ -390,30 +429,32 @@ function showLoader(ticker) {
 function startProgress() {
   const bar = document.getElementById('progress-bar');
   let width = 0;
+  // Simulate progress: fast at first, asymptotically approach 60%
   const interval = setInterval(() => {
-    const remaining = 90 - width;
+    const remaining = 60 - width;
     width += remaining * 0.04;
-    bar.style.width = Math.min(width, 90) + '%';
-    if (width >= 90) clearInterval(interval);
+    bar.style.width = Math.min(width, 60) + '%';
+    if (width >= 60) clearInterval(interval);
   }, 120);
 }
 
 function changeTicker() {
   const input = document.getElementById('ticker-change');
   const ticker = input.value.toUpperCase().trim();
+  const years = parseInt(document.getElementById('years-change').value) || 10;
   if (ticker && ticker.match(/^[A-Z]{1,5}$/)) {
-    showLoader(ticker);
-    window.location.href = `/filings/${ticker}`;
+    showLoader(ticker, years);
+    window.location.href = `/filings/${ticker}?years=${years}`;
   } else {
     alert('Please enter a valid ticker symbol (1-5 letters)');
   }
 }
 
-// Allow Enter key to submit
-document.getElementById('ticker-change').addEventListener('keypress', function(e) {
-  if (e.key === 'Enter') {
-    changeTicker();
-  }
+// Allow Enter key to submit from either input
+['ticker-change', 'years-change'].forEach(id => {
+  document.getElementById(id).addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') changeTicker();
+  });
 });
 </script>
 
