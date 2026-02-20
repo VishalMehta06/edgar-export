@@ -75,23 +75,35 @@ class Stock:
 			tables = self._extract_tables(soup)
 			text = self._extract_text_blocks(soup)
 
+			# Remove Garbage XBRL Tables
+			tables = [t for t in tables if not self._is_xbrl_table(t[1])]
+
 			# Write the data to excel
 			wb = Workbook()
 			wb.remove(wb.active)
-
-			# Write text content
-			ws_text = wb.create_sheet("Text_Content")
-			for row in dataframe_to_rows(text, index=False, header=True):
-				ws_text.append(row)
 
 			# Write each table to its own sheet
 			for sheet_name, df in tables:
 				ws = wb.create_sheet(sheet_name[:31])
 				for row in dataframe_to_rows(df, index=False, header=True):
 					ws.append(row)
+			
+			# Write text content
+			ws_text = wb.create_sheet("Text_Content")
+			for row in dataframe_to_rows(text, index=False, header=True):
+				ws_text.append(row)
 
 			wb.save(filename)
 
+	def _is_xbrl_table(self, df):
+		EXPECTED_FIRST_COLUMN = [
+			"Name:",
+			"Namespace Prefix:",
+			"Data Type:",
+			"Balance Type:",
+			"Period Type:"
+		]
+		return df.iloc[:, 0].tolist() == EXPECTED_FIRST_COLUMN
 
 	def _extract_tables(self, soup):
 		"""
