@@ -1,5 +1,5 @@
 import pandas as pd
-import requests
+from io import StringIO
 from bs4 import BeautifulSoup
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
@@ -64,36 +64,31 @@ class Stock:
 		:type report_category: str 
 		"""
 		resp = self.client._fetch_response(url)
-		if report_category == "statement":
-			# Use pandas to automatically create excel with our statement
-			tables = pd.read_html(resp.text)
-			df = tables[0]
-			df.to_excel(f"{filename}")
-		else:
-			# Parse Tables and Text Blocks
-			soup = BeautifulSoup(resp.text, "lxml")
-			tables = self._extract_tables(soup)
-			text = self._extract_text_blocks(soup)
+		# Parse Tables and Text Blocks
+		soup = BeautifulSoup(resp.text, "lxml")
+		tables = self._extract_tables(soup)
+		text = self._extract_text_blocks(soup)
 
-			# Remove Garbage XBRL Tables
-			tables = [t for t in tables if not self._is_xbrl_table(t[1])]
+		# Remove Garbage XBRL Tables
+		tables = [t for t in tables if not self._is_xbrl_table(t[1])]
 
-			# Write the data to excel
-			wb = Workbook()
-			wb.remove(wb.active)
+		# Write the data to excel
+		wb = Workbook()
+		wb.remove(wb.active)
 
-			# Write each table to its own sheet
-			for sheet_name, df in tables:
-				ws = wb.create_sheet(sheet_name[:31])
-				for row in dataframe_to_rows(df, index=False, header=True):
-					ws.append(row)
-			
-			# Write text content
+		# Write each table to its own sheet
+		for sheet_name, df in tables:
+			ws = wb.create_sheet(sheet_name[:31])
+			for row in dataframe_to_rows(df, index=False, header=True):
+				ws.append(row)
+		
+		# Write text content if it's not a statement
+		if report_category != "statement":
 			ws_text = wb.create_sheet("Text_Content")
 			for row in dataframe_to_rows(text, index=False, header=True):
 				ws_text.append(row)
 
-			wb.save(filename)
+		wb.save(filename)
 
 	def _is_xbrl_table(self, df):
 		EXPECTED_FIRST_COLUMN = [
@@ -116,7 +111,7 @@ class Stock:
 
 		for idx, table in enumerate(tables, start=1):
 			try:
-				df = pd.read_html(str(table))[0]
+				df = pd.read_html(StringIO(str(table)))[0]
 				extracted_tables.append((f"Table_{idx}", df))
 			except ValueError:
 				# Skip tables that pandas can't parse
