@@ -11,7 +11,7 @@ This tool allows you to download statements and other parts of filings as excel 
 git clone https://github.com/VishalMehta06/edgar-export
 cd edgar-export
 python -m venv .venv
-\.venv\Scripts\activate.bat
+.venv\Scripts\activate.ps1
 pip install -r requirements.txt
 ```
 *Use `python3` if that was installed instead.*
