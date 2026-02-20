@@ -2,14 +2,16 @@ from flask import Flask, render_template, request, jsonify, session, redirect, \
 	url_for, send_file
 from app.Stock import Stock
 from app.Client import Client
+from app.logger import get_logger
 import app.Utils as Utils
 import os
 import tempfile
-import traceback
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', \
 								'dev-secret-key-change-in-production')
+
+logger = get_logger(__name__)
 
 # Cache stocks to avoid re-fetching
 stock_cache = {}
@@ -31,7 +33,11 @@ def get_stock(ticker):
 	cache_key = f"{session.get('user_agent')}:{ticker}"
 	
 	if cache_key not in stock_cache:
+		logger.info("Cache miss for ticker=%s — creating new Stock instance", ticker)
 		stock_cache[cache_key] = Stock(ticker=ticker, client=client)
+	else:
+		logger.debug("Cache hit for ticker=%s", ticker)
+
 	return stock_cache[cache_key]
 
 @app.route("/")
@@ -49,10 +55,10 @@ def setup():
 		email = request.form.get("email", "").strip()
 		
 		if name and email:
-			# Store user agent in format expected by Client
 			session['user_agent'] = f"{name} ({email})"
 			session['user_name'] = name
 			session['user_email'] = email
+			logger.info("New session created for user=%r email=%r", name, email)
 			return redirect(url_for('home'))
 	
 	return render_template("setup.html")
@@ -67,20 +73,25 @@ def filings(ticker):
 		stock = get_stock(ticker)
 		if not stock:
 			return redirect(url_for('setup'))
-			
-		filings = Utils.normalize_filings(stock.filings)
+
+		logger.info(
+			"Rendering filings for ticker=%s: %d filing(s)", 
+			ticker, len(stock.filings)
+		)
+
+		normalized = Utils.normalize_filings(stock.filings)
 		filing_types = Utils.get_filing_types(stock.filings)
 
 		return render_template(
 			"filings.html",
-			filings=filings,
+			filings=normalized,
 			filing_types=filing_types,
 			ticker=stock.ticker,
 			user_name=session.get('user_name')
 		)
 	except Exception as e:
-		return render_template("error.html", ticker=ticker, 
-						 error=traceback.format_exc(e))
+		logger.exception("Unhandled error in /filings/%s", ticker)
+		return render_template("error.html", ticker=ticker, error=str(e))
 
 @app.route("/export", methods=["POST"])
 def export_report():
@@ -88,7 +99,6 @@ def export_report():
 		return jsonify({"status": "error", "message": "Not authenticated"}), 401
 	
 	data = request.json
-
 	url = data["url"]
 	ticker = data["ticker"]
 	report_name = data["report_name"]
@@ -102,25 +112,27 @@ def export_report():
 	stock = get_stock(ticker)
 	if not stock:
 		return jsonify({"status": "error", "message": "Not authenticated"}), 401
+
+	logger.info(
+		"Export requested: ticker=%s report=%s date=%s type=%s",
+		ticker, report_name, filing_date, filing_type
+	)
 	
-	# Create temporary file
 	temp_file = tempfile.NamedTemporaryFile(mode='wb', suffix='.xlsx', 
 										    delete=False)
 	temp_path = temp_file.name
 	temp_file.close()
 	
 	try:
-		# Export to temporary file
 		stock.export_url(url, temp_path, category)
-		
-		# Return the file path for download
+		logger.info("Export succeeded: temp_path=%s filename=%s", temp_path, filename)
 		return jsonify({
 			"status": "ok",
 			"download_url": f"/download/{os.path.basename(temp_path)}",
 			"filename": filename
 		})
 	except Exception as e:
-		# Clean up temp file if export failed
+		logger.exception("Export failed for ticker=%s url=%s", ticker, url)
 		if os.path.exists(temp_path):
 			os.unlink(temp_path)
 		return jsonify({"status": "error", "message": str(e)}), 500
@@ -131,37 +143,33 @@ def download_file(temp_filename):
 	if 'user_agent' not in session:
 		return "Not authenticated", 401
 	
-	# Get the actual filename from query parameter
 	filename = request.args.get('filename', 'export.xlsx')
-	
-	# Construct temp file path
 	temp_path = os.path.join(tempfile.gettempdir(), temp_filename)
 	
 	if not os.path.exists(temp_path):
+		logger.warning("Download requested but temp file not found: %s", temp_path)
 		return "File not found", 404
 	
 	try:
-		# Send file and schedule cleanup
 		response = send_file(
 			temp_path,
 			as_attachment=True,
 			download_name=filename,
-			mimetype='application/vnd.openxmlformats-officedocument. \
-				spreadsheetml.sheet'
+			mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 		)
 		
-		# Clean up temp file after sending
 		@response.call_on_close
 		def cleanup():
 			try:
 				if os.path.exists(temp_path):
 					os.unlink(temp_path)
+					logger.debug("Cleaned up temp file: %s", temp_path)
 			except Exception as e:
-				print(f"Error cleaning up temp file: {e}")
+				logger.error("Error cleaning up temp file %s: %s", temp_path, e)
 		
 		return response
 	except Exception as e:
-		# Clean up on error
+		logger.exception("Error sending file %s", temp_path)
 		if os.path.exists(temp_path):
 			os.unlink(temp_path)
 		return str(e), 500
@@ -169,7 +177,9 @@ def download_file(temp_filename):
 @app.route("/logout")
 def logout():
 	"""Clear session and return to setup"""
+	user = session.get('user_name')
 	session.clear()
+	logger.info("User %r logged out", user)
 	return redirect(url_for('setup'))
 
 app.run("localhost", 8080)
