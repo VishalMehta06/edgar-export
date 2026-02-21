@@ -7,6 +7,8 @@ import app.Utils as Utils
 import os
 import tempfile
 
+from flaskwebgui import FlaskUI
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -210,4 +212,6 @@ def logout():
 def favicon():
 	return send_from_directory(app.static_folder, 'favicon.ico')
 
-app.run("localhost", 80)
+#app.run("localhost", 80)
+ui = FlaskUI(app=app, server="flask", width=800, height=600)
+ui.run()
