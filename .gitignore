@@ -12,4 +12,3 @@ logs/
 
 # Ignore pyInstaller Testing
 build/
-dist/
