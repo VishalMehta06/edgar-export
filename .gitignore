@@ -1,11 +1,15 @@
-exports/
-
 # Python temp files
 __pycache__/
 *.py[cod]
 
 .venv
 
+# Don't commit logs
 logs/
 
+# Ignore important secret key
 .env
+
+# Ignore pyInstaller Testing
+build/
+dist/
