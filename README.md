@@ -6,17 +6,12 @@ This tool allows you to download statements and other parts of filings as excel 
 
 ## How to Install
 
-**Windows Setup**
-```shell
-git clone https://github.com/VishalMehta06/edgar-export
-cd edgar-export
-python -m venv .venv
-.venv\Scripts\activate.ps1
-pip install -r requirements.txt
-```
-*Use `python3` if that was installed instead.*
+### Windows Setup
+1. Download the following constructed binary: *insert link here*
+2. Double click to run
+3. Navigate to `http://localhost`
 
-**Linux Setup**
+### Linux Setup
 ```shell
 git clone https://github.com/VishalMehta06/edgar-export
 cd edgar-export
@@ -34,7 +29,7 @@ python routes.py
 **Accessing the App**
 Navigate to the following URL in google chrome!
 ```
-http://localhost:8080
+http://localhost
 ```
 
 ## Create a Binary
