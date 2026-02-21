@@ -8,11 +8,9 @@ import os
 import tempfile
 import threading
 
-from dotenv import load_dotenv
-load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY')
+app.secret_key = "Does-not-matter-since-local-only"
 if not app.secret_key:
 	raise RuntimeError(
 		"SECRET_KEY is not set. Please define it in your .env file."

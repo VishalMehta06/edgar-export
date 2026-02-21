@@ -37,6 +37,12 @@ Navigate to the following URL in google chrome!
 http://localhost:8080
 ```
 
+## Create a Binary
+**Windows:**
+```
+pyinstaller --onefile --name sec-filings-exporter --add-data "templates:templates" --add-data "static:static" --add-data "app:app" --hidden-import flask --hidden-import dotenv --hidden-import bs4 --hidden-import lxml --hidden-import lxml.etree --hidden-import lxml._elementpath --hidden-import openpyxl --hidden-import pandas routes.py
+```
+
 ## Disclosures
 
 *NOTE: This is only meant to be ran locally since there's almost certainly some vulnerabilities in this app!*
