@@ -1,5 +1,6 @@
 # Imports
 from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
+from datetime import datetime
 import requests
 import warnings
 
@@ -89,19 +90,51 @@ class Client:
 			logger.error("Request exception for %s: %s", url, e)
 		return None
 
-	def _extract_filings(self, data: dict, filings: list[dict]) -> None:
+	def _extract_filings(self, data: dict, filings: list[dict],
+						 cutoff_date: datetime | None = None) -> bool:
 		"""
 		Extract filings from a JSON and merge into `filings` list.
+
+		If `cutoff_date` is provided, only filings on or after that date are
+		appended. Returns True if the oldest filing date seen in this batch is
+		still within the cutoff — meaning subsequent (older) paginated files
+		may still contain relevant filings. Returns False only when the oldest
+		date in the batch is beyond the cutoff, at which point all further
+		pages are guaranteed to be out of range too.
+
+		Importantly, we do NOT break early on the first old filing seen within
+		a batch — ordering within a chunk is not strictly guaranteed, so we
+		always process the full batch and use only the oldest date as the
+		pagination signal.
+
+		When `cutoff_date` is None all filings are appended and True is returned.
 		"""
 		accession_numbers = data.get("accessionNumber", [])
 		logger.debug("Extracting %d filings from data", len(accession_numbers))
 
+		oldest_date_seen: datetime | None = None
+
 		for i, accn in enumerate(accession_numbers):
 			try:
+				filing_date_str = data["filingDate"][i]
+
+				if cutoff_date is not None:
+					try:
+						filing_date = datetime.strptime(filing_date_str, "%Y-%m-%d")
+					except ValueError:
+						filing_date = datetime.now()
+
+					# Track the oldest date across the whole batch
+					if oldest_date_seen is None or filing_date < oldest_date_seen:
+						oldest_date_seen = filing_date
+
+					if filing_date < cutoff_date:
+						continue  # Skip appending, but keep scanning the batch
+
 				filings.append({
 					"accn": accn,
 					"form": data["form"][i],
-					"filingDate": data["filingDate"][i],
+					"filingDate": filing_date_str,
 					"reportDate": data["reportDate"][i]
 				})
 			except (KeyError, IndexError) as e:
@@ -109,13 +142,28 @@ class Client:
 					"Failed to extract filing at index %d (accn=%r): %s", i, accn, e
 				)
 
-	def get_filings(self, cik: str) -> list[dict]:
+		if cutoff_date is None:
+			return True
+
+		# Safe to stop paginating only when the oldest date in this entire
+		# batch is already beyond the cutoff
+		if oldest_date_seen is None:
+			return False
+		return oldest_date_seen >= cutoff_date
+
+	def get_filings(self, cik: str, 
+					cutoff_date: datetime | None = None) -> list[dict]:
 		"""
 		Fetch a list of accession numbers for all filings given a CIK. 
 		Returns a list of dicts with "form", "filingDate", and "reportDate".
 
+		If `cutoff_date` is provided, pagination stops as soon as all filings
+		in a batch are older than the cutoff — avoiding unnecessary HTTP
+		requests for historical data that will never be used.
+
 		@param str cik: The CIK of the company as a String with preceeding 
 		zeros.
+		@param cutoff_date: Only fetch filings on or after this date.
 		"""
 		filings = []
 		base_url = "https://data.sec.gov/submissions"
@@ -132,11 +180,24 @@ class Client:
 
 		submissions = resp.json()
 
-		# Extract "recent" filings
-		self._extract_filings(submissions["filings"]["recent"], filings)
+		# Extract "recent" filings — always present, newest first
+		recent_within_cutoff = self._extract_filings(
+			submissions["filings"]["recent"], filings, cutoff_date
+		)
 		logger.debug("Extracted %d recent filings for CIK=%s", len(filings), cik)
 
-		# Extract older filings from additional files, if any
+		# If every filing in the recent block was already beyond the cutoff,
+		# the extra (older) pages will be too — skip them entirely.
+		if cutoff_date is not None and not recent_within_cutoff:
+			logger.debug(
+				"All recent filings older than cutoff for CIK=%s — "
+				"skipping %d extra file(s)",
+				cik, len(submissions["filings"].get("files", []))
+			)
+			logger.info("Total filings fetched for CIK=%s: %d", cik, len(filings))
+			return filings
+
+		# Extract older filings from additional paginated files, if any
 		extra_files = submissions["filings"].get("files", [])
 		logger.debug("%d additional filing file(s) found for CIK=%s", 
 					 len(extra_files), cik)
@@ -145,7 +206,19 @@ class Client:
 			file_url = f"{base_url}/{file['name']}"
 			resp = self._fetch_response(file_url)
 			if resp:
-				self._extract_filings(resp.json(), filings)
+				within_cutoff = self._extract_filings(
+					resp.json(), filings, cutoff_date
+				)
+				# Extra files are ordered newest-first across files too.
+				# Once a full batch is beyond the cutoff, all subsequent
+				# files will be older still — stop paginating.
+				if cutoff_date is not None and not within_cutoff:
+					logger.debug(
+						"Batch from %r entirely beyond cutoff — "
+						"stopping pagination for CIK=%s",
+						file['name'], cik
+					)
+					break
 			else:
 				logger.warning("Skipping extra filing file %r — fetch failed", 
 							   file['name'])

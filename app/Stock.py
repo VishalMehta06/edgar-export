@@ -51,40 +51,32 @@ class Stock:
 	def _init_filings(self, filing_forms: list[str]) -> list[dict]:
 		"""
 		Initialize self.filings. Only includes filings within the last
-		`self.years` years.
-		
+		`self.years` years. The cutoff is pushed down into Client.get_filings
+		so that pagination stops early rather than fetching historical data
+		that will never be displayed.
+
 		:param filing_forms: A list of strings of filing 'form's to track.
 		:type filing_forms: list[str]
 		"""
-		all_filings = self.client.get_filings(self.cik)
-
-		# Compute the earliest date we care about
 		cutoff_date = datetime.now() - timedelta(days=365 * self.years)
 		logger.debug(
-			"Filtering %d total filings by forms=%s and cutoff=%s for ticker=%s",
-			len(all_filings), filing_forms, cutoff_date.date(), self.ticker
+			"Fetching filings with cutoff=%s and forms=%s for ticker=%s",
+			cutoff_date.date(), filing_forms, self.ticker
+		)
+
+		# Pass cutoff_date into get_filings so it stops paginating as soon
+		# as it reaches filings older than the window — no wasted requests.
+		all_filings = self.client.get_filings(self.cik, cutoff_date=cutoff_date)
+		logger.debug(
+			"Received %d filings within cutoff for ticker=%s",
+			len(all_filings), self.ticker
 		)
 
 		selected_filings = []
 
 		for filing in all_filings:
-			# Filter by form type first (cheap)
+			# Date filtering already done by get_filings — only filter by form
 			if filing["form"] not in filing_forms:
-				continue
-
-			# Filter by date — skip filings older than the cutoff
-			try:
-				filing_date = datetime.strptime(filing["filingDate"], "%Y-%m-%d")
-			except (ValueError, KeyError):
-				# If we can't parse the date, include it to be safe
-				filing_date = datetime.now()
-
-			if filing_date < cutoff_date:
-				logger.debug(
-					"Skipping filing accn=%s form=%s date=%s — older than %d years",
-					filing.get("accn"), filing["form"],
-					filing.get("filingDate"), self.years
-				)
 				continue
 
 			accn = filing["accn"]
@@ -99,7 +91,6 @@ class Stock:
 					accn, filing["form"], self.ticker
 				)
 			except Exception as e:
-				# 404s are normal — many filings aren't indexed scrapably
 				status_code = getattr(getattr(e, "response", None), "status_code", None)
 				if status_code == 404:
 					logger.info(

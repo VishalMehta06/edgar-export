@@ -1,13 +1,12 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, \
-	url_for, send_file, send_from_directory
+	url_for, send_file
 from app.Stock import Stock
 from app.Client import Client
 from app.logger import get_logger
 import app.Utils as Utils
 import os
 import tempfile
-
-from flaskwebgui import FlaskUI
+import threading
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -21,9 +20,22 @@ if not app.secret_key:
 
 logger = get_logger(__name__)
 
-# Cache stocks by ticker — shared across all users since filings data is public.
-# Keys are uppercase ticker strings; values are Stock instances.
-stock_cache = {}
+# Cache stocks by (ticker, years) — shared across all users.
+# _cache_locks ensures that if two requests arrive for the same key
+# simultaneously, only one builds the Stock while the other waits,
+# rather than both building in parallel and racing to write the cache.
+stock_cache: dict = {}
+_cache_locks: dict[tuple, threading.Lock] = {}
+_locks_lock = threading.Lock()  # guards _cache_locks itself
+
+
+def _get_lock(cache_key: tuple) -> threading.Lock:
+	"""Return the per-cache-key lock, creating it if necessary."""
+	with _locks_lock:
+		if cache_key not in _cache_locks:
+			_cache_locks[cache_key] = threading.Lock()
+		return _cache_locks[cache_key]
+
 
 def get_client():
 	"""Get or create a Client instance from session"""
@@ -32,29 +44,46 @@ def get_client():
 		return None
 	return Client(user_agent)
 
+
 def get_stock(ticker, years=10):
 	"""Get or create a Stock instance for the given ticker and year window.
-	
-	The cache is keyed by (ticker, years). Because all data comes from the
-	public SEC EDGAR API and no user-specific data is stored in a Stock
-	instance, it is safe to share cached results across different
-	users/sessions.
+
+	The cache is keyed by (ticker, years). A per-key lock ensures that
+	concurrent requests for the same ticker/years pair block until the
+	first request has finished building the Stock and written it to the
+	cache, rather than each building their own copy in parallel and
+	mutating a partially-constructed shared object.
 	"""
 	client = get_client()
 	if not client:
 		return None
-	
+
 	ticker = ticker.upper()
 	cache_key = (ticker, years)
-	
-	if cache_key not in stock_cache:
-		logger.info(
-			"Cache miss for ticker=%s years=%d — creating new Stock instance", 
-			ticker, years
-		)
-		stock_cache[cache_key] = Stock(ticker=ticker, client=client, years=years)
-	else:
+
+	# Fast path — already cached, no lock needed for a read
+	if cache_key in stock_cache:
 		logger.debug("Cache hit for ticker=%s years=%d", ticker, years)
+		return stock_cache[cache_key]
+
+	# Slow path — acquire the per-key lock so only one thread builds
+	lock = _get_lock(cache_key)
+	with lock:
+		# Re-check inside the lock: another thread may have built it
+		# while we were waiting
+		if cache_key in stock_cache:
+			logger.debug(
+				"Cache hit (post-lock) for ticker=%s years=%d", ticker, years
+			)
+			return stock_cache[cache_key]
+
+		logger.info(
+			"Cache miss for ticker=%s years=%d — building Stock", ticker, years
+		)
+		# Build fully before inserting — no other thread can see a
+		# half-constructed object
+		stock = Stock(ticker=ticker, client=client, years=years)
+		stock_cache[cache_key] = stock
 
 	return stock_cache[cache_key]
 
@@ -208,10 +237,4 @@ def logout():
 	logger.info("User %r logged out", user)
 	return redirect(url_for('setup'))
 
-@app.route('/favicon.ico')
-def favicon():
-	return send_from_directory(app.static_folder, 'favicon.ico')
-
-#app.run("localhost", 80)
-ui = FlaskUI(app=app, server="flask", width=800, height=600)
-ui.run()
+app.run("localhost", 80)
