@@ -32,7 +32,7 @@ Navigate to the following URL in google chrome!
 http://localhost
 ```
 
-## Create a Binary
+## Create a Binary (For Developers)
 **Windows:**
 ```
 pyinstaller --onefile --name sec-filings-exporter --add-data "templates:templates" --add-data "static:static" --add-data "app:app" --hidden-import flask --hidden-import dotenv --hidden-import bs4 --hidden-import lxml --hidden-import lxml.etree --hidden-import lxml._elementpath --hidden-import openpyxl --hidden-import pandas routes.py
