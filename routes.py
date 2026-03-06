@@ -158,11 +158,16 @@ def export_report():
 	filing_date = data["filing_date"]
 	filing_type = data["filing_type"]
 	category = data["category"]
+	try:
+		years = int(data.get("years", 10))
+		years = max(1, min(years, 30))
+	except (ValueError, TypeError):
+		years = 10
 
 	safe_report = report_name.replace(" ", "_").replace("/", "-")
 	filename = f"{ticker}_{safe_report}_{filing_date}_{filing_type}.xlsx"
 
-	stock = get_stock(ticker)
+	stock = get_stock(ticker, years=years)
 	if not stock:
 		return jsonify({"status": "error", "message": "Not authenticated"}), 401
 

@@ -17,7 +17,8 @@ document.querySelectorAll(".report").forEach(report => {
           filing_date: report.dataset.filingDate,
           filing_type: report.dataset.filingType,
           ticker: report.dataset.ticker,
-          category: report.dataset.category
+          category: report.dataset.category,
+          years: parseInt(new URLSearchParams(window.location.search).get("years")) || 10
         })
       });
 
