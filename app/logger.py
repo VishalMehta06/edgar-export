@@ -1,16 +1,14 @@
 import logging
 import os
 from logging.handlers import RotatingFileHandler
+import sys
 
-from dotenv import load_dotenv
 
-load_dotenv()
-
-LOG_FILE = os.path.join(os.path.dirname(__file__), "..", "logs", "app.log")
+LOG_FILE = os.path.join(os.path.dirname(sys.executable), "logs", "app.log")
 
 # LOG_MODE controls verbosity. Set to "DEBUG" in .env to enable full logging.
 # Defaults to "WARNING" for normal operation (fewer I/O writes).
-_mode = os.getenv("LOG_MODE", "WARNING").upper()
+_mode = "WARNING"
 LOG_LEVEL = getattr(logging, _mode, logging.WARNING)
 
 
