@@ -7,7 +7,7 @@ This tool allows you to download statements and other parts of filings as excel 
 ## How to Install
 
 ### Windows Setup
-1. Download the following constructed binary: *insert link here*
+1. Download the following constructed binary: [Windows Download](https://github.com/VishalMehta06/edgar-export/raw/refs/heads/main/dist/sec-filings-exporter.exe)
 2. Double click to run
 3. Navigate to `http://localhost`
 
