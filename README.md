@@ -11,12 +11,12 @@ This tool allows you to download statements and other parts of filings as excel 
 2. Double click to run
 3. Navigate to `http://localhost`
 
-### Linux Setup
+### MacOS // Linux Setup
 ```shell
 git clone https://github.com/VishalMehta06/edgar-export
 cd edgar-export
 python -m venv .venv
-.venv/Scripts/activate
+source .venv/Scripts/activate
 pip install -r requirements.txt
 ```
 *Use `python3` if that was installed instead.*
