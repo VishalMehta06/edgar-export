@@ -12,6 +12,9 @@ This tool allows you to download statements and other parts of filings as excel 
 3. Navigate to `http://localhost`
 
 ### MacOS // Linux Setup
+1. If using Mac, install python here: [MacOS Installer](https://www.python.org/ftp/python/3.14.3/python-3.14.3-macos11.pkg)
+
+2. Create virtual environment for the app and install dependencies:
 ```shell
 git clone https://github.com/VishalMehta06/edgar-export
 cd edgar-export
@@ -40,6 +43,8 @@ pyinstaller --onefile --name sec-filings-exporter --add-data "templates:template
 
 ## Disclosures
 
-*NOTE: This is only meant to be ran locally since there's almost certainly some vulnerabilities in this app!*
+**NOTE Regarding Network-wide Use:** This is only meant to be ran locally since there are certainly some vulnerabilities that other users on the network could abuse!
 
-The authentication (if you can call it that) **IS NOT SECURE** and is only used to fill the user agent field of SEC EDGAR requests. 
+**Note Regarding Authentication:** An email and name is collected ONLY to fulfill SEC request requirements. This information is not stored in the app and is not sent to any other hosts.
+
+**Financial Information Disclosure:** All content is for informational purposes only, you should not construe any such information or other material as legal, tax, investment, financial, or other advice.
